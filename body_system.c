@@ -1,3 +1,5 @@
+#define base_addr = 0x20000000
+#define using = 10
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -5,13 +7,12 @@
 struct page{
     int size;
     int id;
-    int addr;
     struct page* next;
     struct page* last;
 };
 
-static int base_addr = 0x20000000;
 struct page* list[7];
+int frame_array[63];
 
 int check(int index){
     if(index > 6 || index < 0){
@@ -23,7 +24,7 @@ int check(int index){
     return 1;
 }
 
-int seek(int ID, int check_size){
+/*int seek(int ID, int check_size){
     struct page* tmp = list[check_size];
     int position = 0;
     if(tmp == NULL){
@@ -37,51 +38,41 @@ int seek(int ID, int check_size){
         tmp = tmp->next;
     }
     return -1;
-}
+}*/
 
 int split(int target){
-    int t = check(target);
-    if(t == -1){
-        return 0;
-    }
-    else if(t == 0){
-        if(!split(target+1)){
-            return 0;
-        }
-    }
-    struct page* tmp = list[target];
-    struct page* left = malloc(sizeof(struct page));
-    struct page* right = malloc(sizeof(struct page));
-    left->id = tmp->id*2;
-    left->addr = tmp->addr;
-    left->next = right;
-    left->size = target-1;
-    left->last = NULL;
-    right->id = tmp->id*2+1;
-    right->addr = tmp->addr + pow(2, target-1)*4096;
-    right->next = NULL;
-    right->size = target-1;
-    right->last = left;
-    list[target] = tmp->next;
-    free(tmp);
-    list[target-1] = left;
-    /////////////////////////
-    printf("split\n");
-    print();
-    /////////////////////////
-    return 1;
+    	int t = check(target);
+    	if(t == -1){
+    	    return 0;
+    	}
+    	else if(t == 0){
+     	   if(!split(target+1)){
+       	     return 0;
+       	 }
+   	 }
+   	struct page* tmp = list[target];
+    	list[target] = tmp->next;
+    	frame_array[tmp->id*pow(2, tmp->size)] = target-1;
+    	frame_array[tmp->id*pow(2, tmp->size)+pow(2, tmp->size-1)] = target-1;
+    	struct page* right = (struct page*)(base_addr+tmp->id*pow(2, tmp->size)*4096);
+    	tmp->id = tmp->id*2;
+    	tmp->next = right;
+    	tmp->size = target-1;
+    	tmp->last = NULL;
+    	right->id = tmp->id*2+1;
+    	right->next = NULL;
+    	right->size = target-1;
+    	right->last = left;
+    	list[target-1] = left;
+    	return 1;
 }
 
-void merge(struct page* p, int pos, int lorr){
+/*void merge(struct page* p, int pos, int lorr){
     struct page* tmp;
     if(pos == -1){
         tmp = list[p->size];
         if(tmp == NULL){
             list[p->size] = p;
-            //////////////////////////
-            printf("just link\n");
-            print();
-            //////////////////////////
             return;
         }
         if(tmp->id > p->id){
@@ -89,10 +80,6 @@ void merge(struct page* p, int pos, int lorr){
             tmp->last = p;
             p->last = NULL;
             list[p->size] = p;
-            //////////////////////////
-            printf("just link\n");
-            print();
-            //////////////////////////
             return;
         }
         while(tmp != NULL){
@@ -107,17 +94,10 @@ void merge(struct page* p, int pos, int lorr){
         tmp->last->next = p;
         p->next = tmp;
         tmp->last = p;
-        //////////////////////////
-        printf("just link\n");
-        print();
-        //////////////////////////
         return;
     }
     else if(pos == 0){
         tmp = list[p->size];
-        /////////////////////////////////////////////////
-        printf("merge %0x %0x\n", p->addr, tmp->addr);
-        ////////////////////////////////////////////////
         if(lorr == 1){
             p->addr = tmp->addr;
         }
@@ -134,11 +114,6 @@ void merge(struct page* p, int pos, int lorr){
         else{
             pos = seek(p->id-1, p->size);
         }
-        /////////////////////////////////////////
-        printf("before merge\n");
-        print();
-        ///////////////////////////////////////////
-        printf("%d\n", pos);
         merge(p, pos, lorr);
         return;
     }
@@ -147,9 +122,6 @@ void merge(struct page* p, int pos, int lorr){
         for(int i = 0; i < pos; i++){
             tmp = tmp->next;
         }
-        /////////////////////////////////////////////////
-        printf("merge %0x %0x\n", p->addr, tmp->addr);
-        ////////////////////////////////////////////////
         if(lorr == 1){
             p->addr = tmp->addr;
         }
@@ -171,15 +143,11 @@ void merge(struct page* p, int pos, int lorr){
         else{
             pos = seek(p->id-1, p->size);
         }
-        /////////////////////////////////////////
-        printf("before merge\n");
-        print();
-        ///////////////////////////////////////////
         printf("%d\n", pos);
         merge(p, pos, lorr);
         return;
     }
-}
+}*/
 
 struct page* page_locate(int need){
     int t = check(need);
@@ -195,17 +163,11 @@ struct page* page_locate(int need){
     }
     struct page* tmp = list[need];
     list[need] = tmp->next;
-    ///////////////////////////////////
-    printf("get %0x\n", tmp->addr);
-    print();
-    /////////////////////////////////
+    frame_array[tmp->id*pow(2, need)] = using;
     return tmp;
 }
 
-void space_free(struct page* done){
-    /////////////////////////
-    printf("free addr %0x\nfree id %d\n", done->addr, done->id);
-    ///////////////////////////
+/*void space_free(struct page* done){
     int place, left_right;
     left_right = done->id % 2;
     if(left_right == 0){
@@ -216,43 +178,19 @@ void space_free(struct page* done){
     }
     merge(done, place, left_right);
     return;
-}
-//////////////////
-void print(){
-    for(int i = 0; i < 7; i++){
-        printf("list[%d]: ", i);
-        struct page* tmp = list[i];
-        while(tmp != NULL){
-            printf("%0x(%d) ", tmp->addr, tmp->id);
-            tmp = tmp->next;
-        }
-        if(tmp == NULL){
-            printf("NULL\n");
-        }
-    }
-    printf("\n");
-    return;
-}
-//////////////////
+}*/
+
 int main(){
-    struct page* all = malloc(sizeof(struct page));
-    all->addr = 0x00000000 + base_addr;
-    all->id = 0;
-    all->next = NULL;
-    all->size = 6;
-    all->last = NULL;
-    list[6] = all;
-    ///////////////////////////
-    print();
-    int s;
-    struct page* test[5];
-    for(int i = 0; i < 5; i++){
-        scanf("%d", &s);
-        test[i] = page_locate(s);
-    }
-    for(int i = 0; i < 5; i++){
-        space_free(test[i]);
-    }
-    ///////////////////////////
-    return 0;
+	for(int i = 1; i < 63; i++){
+		frame_array[i] = -1;
+	}
+    	frame_array[0] = 6;
+    	
+    	struct page* all = (struct page*)(base_addr);
+    	all->id = 0;
+    	all->next = NULL;
+    	all->size = 6;
+    	all->last = NULL;
+    	list[6] = all;
+    	return 0;
 }
