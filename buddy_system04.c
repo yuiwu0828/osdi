@@ -110,8 +110,9 @@ void merge(struct page* p, int condition, int left_right){
     		}
     		if(left_right == 1){
     			if(frame_array[(p->id-1)*pow(2, p->size)] == done->size){
-    				frame_array[(p->id-1)*pow(2, p->size)] = -1;
-    				frame_array[p->id*pow(2, p->size)]++;
+    				frame_array[p->id*pow(2, p->size)] = -1;
+    				frame_array[(p->id-1)*pow(2, p->size)]++;
+    				p->addr = (void*)((int)p->addr-pow(2, p->size)*4096);
     				p->size++;
     				p->id = done->id/2;
     				merge(p, 1, p->id%2);
@@ -162,8 +163,9 @@ void space_free(void* d){
     	}
     	if(done->id%2 == 1){
     		if(frame_array[(done->id-1)*pow(2, done->size)] == done->size){
-    			frame_array[(done->id-1)*pow(2, done->size)] = -1;
-    			frame_array[done->id*pow(2, done->size)]++;
+    			frame_array[done->id*pow(2, done->size)] = -1;
+    			frame_array[(done->id-1)*pow(2, done->size)]++;
+    			done->addr = (void*)((int)done->addr-pow(2, done->size)*4096);
     			done->size++;
     			done->id = done->id/2;
     			merge(done, 1, done->id%2);
