@@ -24,7 +24,7 @@ void system_init(){
 		using_array[i] = NULL;
 	}
     	frame_array[0] = 6;
-    	struct page* all;
+    	struct page* all = NULL;
     	all->addr = (void*)(base_addr);
     	all->id = 0;
     	all->next = NULL;
@@ -59,7 +59,7 @@ int split(int target){
     	list[target] = tmp->next;
     	frame_array[tmp->id*pow(2, tmp->size)] = target-1;
     	frame_array[tmp->id*pow(2, tmp->size)+pow(2, tmp->size-1)] = target-1;
-    	struct page* right;
+    	struct page* right = NULL;
     	right->addr = (void*)((int)tmp->addr+pow(2, tmp->size-1)*4096);
     	tmp->id = tmp->id*2;
     	tmp->next = right;
@@ -157,7 +157,7 @@ void* page_locate(int need){
 }
 
 void space_free(void* d){
-    	struct page* done = using_array[((int)done-base_addr)/4096];
+    	struct page* done = using_array[((int)d-base_addr)/4096];
     	frame_array[done->id*pow(2, done->size)] = done->size;
     	using_array[done->id*pow(2, done->size)] = NULL;
     	if(done->id%2 == 0){
