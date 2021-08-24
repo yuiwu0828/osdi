@@ -1,37 +1,34 @@
 #include "buddy_system.h"
-
+#include "uart.h"
+#include "sprintf.h"
 #define base_addr 0x20000000
 #define using 10
 #define NULL 0
 
-struct page* list[7];
-int frame_array[64];
-struct page* using_array[64];
-
-int check(int index){
-    if(index > 6 || index < 0){
-        return -1;
-    }
-    else if(list[index] == NULL){
-        return 0;
-    }
-    return 1;
+void print(){
+	for(int i = 0; i < 7; i++){
+		char str[20];
+		struct page* tmp;
+		sprintf(str, "list[%d]: ", i);
+		uart_puts(str);
+		while(tmp != NULL){
+			sprintf(str, "%0x", tmp->addr);
+			uart_puts(str);
+			uart_send(" ");
+			tmp = tmp->next;
+		}
+		uart_puts("NULL\n");
+	}
 }
 
-void system_init(){
-	for(int i = 0; i < 64; i++){
-		frame_array[i] = -1;
-		using_array[i] = NULL;
-	}
-    	frame_array[0] = 6;
-    	struct page* all = NULL;
-    	all->addr = (void*)(base_addr);
-    	all->id = 0;
-    	all->next = NULL;
-    	all->size = 6;
-    	all->last = NULL;
-    	list[6] = all;
-    	return ;
+int check(int index){
+    	if(index > 6 || index < 0){
+     	   	return -1;
+    	}
+    	else if(list[index] == NULL){
+     	   	return 0;
+   	}
+   	return 1;
 }
 
 int pow(int a, int b){
@@ -138,12 +135,12 @@ void merge(struct page* p, int condition, int left_right){
 void* page_locate(int need){
 	int t = check(need);
     	if(t == -1){
-    	   	//uart_puts("Unvalid number!\n");
+    	   	uart_puts("Unvalid number!\n");
    	    	return NULL;
     	}
     	else if(t == 0){
      	  	if(!split(need+1)){
-      	     		//uart_puts("Fail! Don't have enough space\n");
+      	     		uart_puts("Fail! Don't have enough space\n");
       	     		return NULL;
       	  	}
    	}
