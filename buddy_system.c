@@ -8,17 +8,18 @@
 void print(){
 	for(int i = 0; i < 7; i++){
 		char str[20];
-		struct page* tmp;
+		struct page* tmp = list[i];
 		sprintf(str, "list[%d]: ", i);
 		uart_puts(str);
 		while(tmp != NULL){
 			sprintf(str, "%0x", tmp->addr);
 			uart_puts(str);
-			uart_send(" ");
+			uart_puts(" ");
 			tmp = tmp->next;
 		}
 		uart_puts("NULL\n");
 	}
+	uart_puts("\n");
 }
 
 int check(int index){
@@ -56,7 +57,7 @@ int split(int target){
     	list[target] = tmp->next;
     	frame_array[tmp->id*pow(2, tmp->size)] = target-1;
     	frame_array[tmp->id*pow(2, tmp->size)+pow(2, tmp->size-1)] = target-1;
-    	struct page* right = NULL;
+    	struct page* right = page_pool+tmp->id*pow(2, tmp->size)+pow(2, tmp->size-1);
     	right->addr = (void*)((int)tmp->addr+pow(2, tmp->size-1)*4096);
     	tmp->id = tmp->id*2;
     	tmp->next = right;
@@ -67,6 +68,7 @@ int split(int target){
     	right->size = target-1;
     	right->last = tmp;
     	list[target-1] = tmp;
+    	print();
     	return 1;
 }
 
@@ -139,7 +141,7 @@ void* page_locate(int need){
    	    	return NULL;
     	}
     	else if(t == 0){
-     	  	if(!split(need+1)){
+     	  	if(split(need+1) == 0){
       	     		uart_puts("Fail! Don't have enough space\n");
       	     		return NULL;
       	  	}
@@ -150,6 +152,7 @@ void* page_locate(int need){
     	tmp->next = NULL;
     	frame_array[tmp->id*pow(2, need)] = using;
     	using_array[tmp->id*pow(2, need)] = tmp;
+    	print();
     	return tmp->addr;
 }
 

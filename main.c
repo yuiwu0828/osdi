@@ -8,6 +8,7 @@
 struct page* list[7] = {};
 int frame_array[64] = {};	
 struct page* using_array[64] = {};
+struct page page_pool[64];
 	
 int strcmp(const char *a,const char *b){
   	if (! (*a | *b)){ 
@@ -45,7 +46,7 @@ void main()
 		using_array[i] = NULL;
 	}
     	frame_array[0] = 6;
-    	struct page* all;
+    	struct page* all = page_pool;
     	all->addr = (void*)(base_addr);
     	all->id = 0;
     	all->next = NULL;
@@ -79,6 +80,7 @@ void main()
         			char part[20] = {};
         			left(part, cmd, tmp);
         			if(!strcmp(part, "pageloc")){
+        				print();
         				int t = (int)*(cmd+tmp+1)-48;
         				void* place = page_locate(t);
         			}

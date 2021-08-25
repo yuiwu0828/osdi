@@ -9,6 +9,7 @@ struct page{
 extern struct page* list[7];
 extern int frame_array[64];	
 extern struct page* using_array[64];
+extern struct page page_pool[64];
 
 int check(int index);
 int pow(int a, int b);
